@@ -3,6 +3,9 @@ version: "1.0"
 services:
   backend:
     build: ./backend
+    volumes:
+      - ./backend:/app
+      - ./db:/db
     ports:
       - "5050:5000"
     networks:
