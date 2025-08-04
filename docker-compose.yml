@@ -1,0 +1,20 @@
+version: "1.0"
+
+services:
+  backend:
+    build: ./backend
+    ports:
+      - "5050:5000"
+    networks:
+    - habitnet
+  frontend:
+    build: ./frontend
+    ports: 
+      - "8501:8501"
+    depends_on:
+      - backend
+    networks:
+      - habitnet
+
+networks:
+  habitnet:
