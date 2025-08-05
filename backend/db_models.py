@@ -21,3 +21,10 @@ class HabitLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     habit_id = db.Column(db.Integer, db.ForeignKey("habit.id"))
     log_date = db.Column(db.Date)
+
+
+class DailySuccessLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
+    date = db.Column(db.Date, nullable=False)
+    success_rate = db.Column(db.Float, nullable=False)

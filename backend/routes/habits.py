@@ -1,5 +1,5 @@
 from flask import request, jsonify
-from db_models import db, User, Habit, HabitLog
+from db_models import db, User, Habit, HabitLog, DailySuccessLog
 from flask import Blueprint
 import datetime
 from datetime import timedelta
@@ -51,11 +51,13 @@ def check_habit(user_id, habit_id):
         new_log = HabitLog(habit_id=habit.id, log_date=today)
         db.session.add(new_log)
         db.session.commit()
+        update_daily_success_rate(user_id)
         return jsonify({"message": "Checked and logged for today"})
     else:
         if existing_log:
             db.session.delete(existing_log)
             db.session.commit()
+            update_daily_success_rate(user_id)
             return jsonify({"message": "Unchecked successfully"})
         else:
             return jsonify({"message": "Unchecked — no action taken"})
@@ -209,11 +211,10 @@ def habit_streak(user_id, habit_id):
     )
 
 
-@habit_bp.route("/users/<int:user_id>/habits/success", methods=["GET"])
-def habit_success_rate(user_id):
+def calculate_success_rates(user_id):
     habits = Habit.query.filter_by(user_id=user_id)
     today = datetime.datetime.utcnow().date()
-    response = []
+    rates = []
 
     for habit in habits:
         if not habit.created_at:
@@ -224,7 +225,7 @@ def habit_success_rate(user_id):
 
         success_rate = (successful_days / total_days) * 100 if total_days > 0 else 0
 
-        response.append(
+        rates.append(
             {
                 "habit_id": habit.id,
                 "name": habit.name,
@@ -235,4 +236,69 @@ def habit_success_rate(user_id):
             }
         )
 
-    return jsonify(response)
+    return rates
+
+
+@habit_bp.route("/users/<int:user_id>/habits/success", methods=["GET"])
+def habit_success_rate(user_id):
+    rates = calculate_success_rates(user_id)
+    return jsonify(rates)
+
+
+@habit_bp.route("/users/<int:user_id>/habits/best-worst", methods=["GET"])
+def best_worst_habits(user_id):
+    rates = calculate_success_rates(user_id)
+
+    if not rates:
+        return jsonify({"best_habit": None, "worst_habit": None})
+
+    best = max(rates, key=lambda h: h["success_rate"])
+    worst = min(rates, key=lambda h: h["success_rate"])
+
+    return jsonify({"best_habit": best, "worst_habit": worst})
+
+
+def update_daily_success_rate(user_id):
+    today = datetime.datetime.utcnow().date()
+
+    # Get all habits of the user created on or before today
+    habits = Habit.query.filter(
+        Habit.user_id == user_id, Habit.created_at <= today
+    ).all()
+    total = len(habits)
+
+    # Count habits that are checked today
+    checked = 0
+    for habit in habits:
+        log = HabitLog.query.filter_by(habit_id=habit.id, log_date=today).first()
+        if log:
+            checked += 1
+
+    success_rate = (checked / total) * 100 if total > 0 else 0
+
+    # Check if entry already exists
+    daily_log = DailySuccessLog.query.filter_by(user_id=user_id, date=today).first()
+    if daily_log:
+        daily_log.success_rate = success_rate
+    else:
+        daily_log = DailySuccessLog(
+            user_id=user_id, date=today, success_rate=success_rate
+        )
+        db.session.add(daily_log)
+
+    db.session.commit()
+
+
+@habit_bp.route("/users/<int:user_id>/success-log", methods=["GET"])
+def get_success_log(user_id):
+    logs = (
+        DailySuccessLog.query.filter_by(user_id=user_id)
+        .order_by(DailySuccessLog.date)
+        .all()
+    )
+    return jsonify(
+        [
+            {"date": log.date.isoformat(), "success_rate": log.success_rate}
+            for log in logs
+        ]
+    )
