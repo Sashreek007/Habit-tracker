@@ -28,3 +28,18 @@ class DailySuccessLog(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"))
     date = db.Column(db.Date, nullable=False)
     success_rate = db.Column(db.Float, nullable=False)
+
+
+class FriendRequest(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    from_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    to_user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    status = db.Column(
+        db.String(20), default="pending"
+    )  # pending / accepted / declined
+
+
+class Friendship(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user1_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user2_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)

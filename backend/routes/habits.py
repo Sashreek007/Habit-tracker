@@ -223,7 +223,9 @@ def calculate_success_rates(user_id):
         logs = HabitLog.query.filter(HabitLog.habit_id == habit.id).all()
         successful_days = len(set(log.log_date for log in logs))
 
-        success_rate = (successful_days / total_days) * 100 if total_days > 0 else 0
+        success_rate = min(
+            (successful_days / total_days) * 100 if total_days > 0 else 0, 100.0
+        )
 
         rates.append(
             {

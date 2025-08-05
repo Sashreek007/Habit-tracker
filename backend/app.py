@@ -5,6 +5,7 @@ import os
 import time
 import psycopg2
 from sqlalchemy.exc import OperationalError
+from routes.friends import friend_bp
 
 app = Flask(__name__)
 
@@ -24,6 +25,7 @@ for _ in range(10):
         time.sleep(2)
 
 app.register_blueprint(habit_bp)
+app.register_blueprint(friend_bp)
 
 
 @app.route("/liggesh")
