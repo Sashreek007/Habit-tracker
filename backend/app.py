@@ -1,17 +1,27 @@
 from flask import Flask, redirect, url_for
 from db_models import db, User, Habit, HabitLog
 from routes.habits import habit_bp
+import os
+import time
+import psycopg2
+from sqlalchemy.exc import OperationalError
 
 app = Flask(__name__)
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:////db/habit.db"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db.init_app(app)
-
-# Create the tables
-with app.app_context():
-    db.create_all()
+for _ in range(10):
+    try:
+        with app.app_context():
+            db.create_all()
+        break
+    except OperationalError:
+        print("Waiting for DB to be ready...")
+        time.sleep(2)
 
 app.register_blueprint(habit_bp)
 

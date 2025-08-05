@@ -1,21 +1,24 @@
-#Using a light version of python image
-
+# Using a light version of Python image
 FROM python:3.10-slim
 
+# Install required system dependencies for psycopg2 (NOT binary)
+RUN apt-get update && apt-get install -y \
+  gcc \
+  libpq-dev \
+  && rm -rf /var/lib/apt/lists/*
 
-#Set working dir in the image
-
+# Set working directory in the image
 WORKDIR /app
 
-#copy all the backends files into the container
-
+# Copy all the backend files into the container
 COPY . .
 
-# Install all the required packages
+# Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# EXPOSE  port for streamlit 
+# Expose Flask port
 EXPOSE 5000
 
-# Start the Streamlit app
+# Start the Flask app
 CMD ["python", "app.py"]
+
