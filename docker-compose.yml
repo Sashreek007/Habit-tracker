@@ -1,20 +1,45 @@
-version: "1.0"
+
+version: "3.8"
 
 services:
   backend:
     build: ./backend
+    volumes:
+      - ./backend:/app
     ports:
       - "5050:5000"
+    depends_on:
+      - db
+    env_file:
+      - .env
     networks:
-    - habitnet
+      - habitnet
+
   frontend:
     build: ./frontend
-    ports: 
+    ports:
       - "8501:8501"
     depends_on:
       - backend
     networks:
       - habitnet
 
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - habitnet
+
+volumes:
+  pgdata:
+
 networks:
   habitnet:
+
+
