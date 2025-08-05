@@ -207,3 +207,32 @@ def habit_streak(user_id, habit_id):
             "maxstreak": maxstreak,
         }
     )
+
+
+@habit_bp.route("/users/<int:user_id>/habits/success", methods=["GET"])
+def habit_success_rate(user_id):
+    habits = Habit.query.filter_by(user_id=user_id)
+    today = datetime.datetime.utcnow().date()
+    response = []
+
+    for habit in habits:
+        if not habit.created_at:
+            continue
+        total_days = (today - habit.created_at).days + 1
+        logs = HabitLog.query.filter(HabitLog.habit_id == habit.id).all()
+        successful_days = len(set(log.log_date for log in logs))
+
+        success_rate = (successful_days / total_days) * 100 if total_days > 0 else 0
+
+        response.append(
+            {
+                "habit_id": habit.id,
+                "name": habit.name,
+                "created_at": habit.created_at.strftime("%Y-%m-%d"),
+                "success_rate": round(success_rate, 2),
+                "checked_days": successful_days,
+                "total_days": total_days,
+            }
+        )
+
+    return jsonify(response)
