@@ -6,9 +6,10 @@ import time
 import psycopg2
 from sqlalchemy.exc import OperationalError
 from routes.friends import friend_bp
+from flask_cors import CORS
 
 app = Flask(__name__)
-
+CORS(app)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
 
